@@ -45,17 +45,17 @@ void SendDataThread(LPVOID lpParameter)
 	{
 		DWORD dwRet;
 		memset(pcDataRev, 0, commPort->m_dwFrameSize);
-		if (count == 0 || rec_bit2 == 0x15) {
+		if (count == 0 || rec_bit2 == 0xA1) {
 			count = 1;
 			commPort->SendData(pcData, 8);
+			CString cs = L"·¢ËÍ£º";
+			for (int i = 0; i < 8; i++)
+			{
+				cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
+			}
+			cs.Append(L"\n");
+			TRACE(cs);
 		}
-		CString cs = L"·¢ËÍ£º";
-		for (int i = 0; i < 8; i++)
-		{
-			cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
-		}
-		cs.Append(L"\n");
-		TRACE(cs);
 		Sleep(500);
 		LONG XY = commPort->RecData(pcDataRev, commPort->m_dwFrameSize, &dwRet);
 		if (XY && commPort->callbackFunc)

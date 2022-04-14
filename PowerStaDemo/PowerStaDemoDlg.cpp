@@ -38,46 +38,41 @@ void callbackFunc(PCHAR  pcData, DWORD  dwDataSize)
 	//double sum, avg, DCsum, DC;
 	//sum = avg = DCsum = DC =  0;
 	//double y_sum[10000];
-	CString cs=L"接收：";
-	for (int i = 0; i < dwDataSize; i++)
-	{
-		cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
+	//if ((pcData[0] == 0x0D || pcData[0] == 0x0C || pcData[0] == 0x0B) && pcData[4] == 0xFF) {
+	//	if(pcData[0] == 0x0D) pPSDlg->ButtonOn3 = true;
+	//	else if(pcData[0] == 0x0C) pPSDlg->ButtonOn2 = true;
+	//	else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = true;
+	//	return;
+	//}
+	if (pcData[0] == 0x0D || pcData[0] == 0x0C || pcData[0] == 0x0B) {
+		if (pcData[4] == 0x00) {
+			if (pcData[0] == 0x0D) pPSDlg->ButtonOn3 = false;
+			else if (pcData[0] == 0x0C) pPSDlg->ButtonOn2 = false;
+			else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = false;
+		}
+		else {
+			if(pcData[0] == 0x0D) pPSDlg->ButtonOn3 = true;
+			else if(pcData[0] == 0x0C) pPSDlg->ButtonOn2 = true;
+			else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = true;
+		}
+		return;
 	}
-	cs.Append(L"\n");
-	TRACE(cs);
+	//CString cs=L"接收：";
+	//for (int i = 0; i < dwDataSize; i++)
+	//{
+	//	cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
+	//}
+	//cs.Append(L"\n");
+	//TRACE(cs);
 	if (pPSDlg)
 	{
 		CString str;
 		str.Format(L"%02X%02X%02X", (unsigned char)pcData[3], (unsigned char)pcData[4], (unsigned char)pcData[5]);//合并3个char
 		USES_CONVERSION;
-		std::string s(W2A(str));
+		string s(W2A(str));
 		const char* cstr = s.c_str();
 		int nTemp = (int)strtol(cstr, NULL, 16);//cstring转const char*
 		rcv_data = nTemp * 5 / exp2(23);
-		//y_sum[i_count] = y;
-		//float *p = (float *)(pcData + 2);
-		//DWORD *pdwParam = (DWORD *)(pcData + 2); *p * 5 / exp2(23)
-		//cs.Format(L"%.6f", y);
-		//pPSDlg->m_cStaticPower.SetWindowText(cs);
-		//for (i = 0; i < i_count; i++)//计算均值
-		//{
-		//	sum += y_sum[i];
-		//}
-		//if (i_count > 0) {
-		//	avg = sum / i_count;
-		//}
-		//cs.Format(L"%.4f", avg);
-		//pPSDlg->m_cStaticPowerAvg.SetWindowText(cs);
-		//for (i = 1; i < i_count; i++)//计算方差
-		//{
-		//	DCsum += pow(y_sum[i] - avg, 2);
-		//}
-		//if (i_count > 0) {
-		//	DC = pow((DCsum / i_count), 0.5);
-		//}
-		//cs.Format(L"%.4f", DC);
-		//pPSDlg->m_cStaticPowerDC.SetWindowText(cs);
-		//i_count++;
 	}
 }
 
@@ -280,7 +275,8 @@ void CPowerStaDemoDlg::PowerStaSettingEnable(BOOL bEnable)
 	GetDlgItem(IDC_BUTTON_POWERSTA_SETTING)->EnableWindow(bEnable);
 	GetDlgItem(IDC_EDIT_POWER_SET)->EnableWindow(bEnable);
 	GetDlgItem(IDC_BUTTON_POWER_SET)->EnableWindow(bEnable);
-
+	GetDlgItem(IDC_BUTTON1)->EnableWindow(bEnable);
+	GetDlgItem(IDC_BUTTON2)->EnableWindow(bEnable);
 }
 
 
@@ -342,6 +338,7 @@ void CPowerStaDemoDlg::OnStaticClickedPowerStaConnect()//连接串口
 		bRet = psDisconnectDevice(m_pHandleComm);
 		if (bRet)
 		{
+			OnBnClickedButton2();
 			GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(L"激光器串口关闭成功！");
 			m_bPowerstaConnected = false;
 		}
@@ -488,11 +485,6 @@ void CPowerStaDemoDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	if (2 == nIDEvent)
 	{
-		//++m_count;
-		//m_pLineSerie->ClearSerie();
-		//LeftMoveArray(m_HightSpeedChartArray, m_c_arrayLength, randf(0, 10));
-		//LeftMoveArray(m_X, m_c_arrayLength, m_count);
-		//m_pLineSerie->AddPoints(m_X, m_HightSpeedChartArray, m_c_arrayLength);
 		++m_count;
 		drawMoving();
 	}
@@ -508,7 +500,7 @@ void CPowerStaDemoDlg::drawMoving()
 	char pcData[] = { 0x17,0x06,0x00, 0x00 ,0x00 ,0x00 ,0x1c ,0x04 };
 	psWriteData(m_pHandleComm, pcData, 8);
 	//AcceptData(true);
-	if (m_pHandleComm && m_bPowerstaConnected)
+	if (m_pHandleComm && m_bPowerstaConnected && rcv_data)
 	{
 		//lRet = m_cComPortPowerSta.RecData(pcRev, 8, &dwRev);
 		//if (lRet) {
@@ -601,7 +593,7 @@ void CPowerStaDemoDlg::OnBnClickedButton1()//接受数据并开始绘图
 	AcceptData(1);
 	KillTimer(2);
 	ZeroMemory(&m_HightSpeedChartArray, sizeof(double)*m_c_arrayLength);
-	m_count = m_c_arrayLength;
+	m_count = -1;
 	/**
 	* @author hlf
 	* @description 2022/3/22 对m_HightSpeedChartArray_sum进行了初始化，防止数值初始化非0
@@ -618,8 +610,9 @@ void CPowerStaDemoDlg::OnBnClickedButton2()//结束绘图
 	// TODO: 在此添加控件通知处理程序代码
 	AcceptData(0);
 	KillTimer(2);
-	m_count = 0;
+	m_count = -1;
 	drawing = false;
+	rcv_data = 0;
 	ZeroMemory(&m_HightSpeedChartArray, sizeof(double)*m_c_arrayLength);
 }
 
@@ -648,11 +641,15 @@ void CPowerStaDemoDlg::OnBnClickedButtonDataSave()
 		outFile.open(csFileName, ios::out); // 打开模式可省略  
 		outFile << "时间/S" << ',' << "功率/mw" << ',' << "标准差" << ',' << "平均功率/mw" << ',' << "当前功率/mw" << endl;
 		//m_count = 40000;
-		if (m_count > 1) {
-			for (i = 1; i <= m_count; i++)
-			{
-				outFile << m_X[i] << ',' << m_HightSpeedChartArray[i] << endl;
-			}
+		//if (m_count > 1) {
+		//	for (i = 1; i <= m_count; i++)
+		//	{
+		//		outFile << m_X[i] << ',' << m_HightSpeedChartArray[i] << endl;
+		//	}
+		//}
+		for (i = 0; i <= m_count; i++)
+		{
+			outFile << m_X[i] << ',' << m_HightSpeedChartArray[i] << endl;
 		}
 		outFile.close();
 		ifstream inFile(csFileName, ios::in);
@@ -720,16 +717,16 @@ void CPowerStaDemoDlg::OnBnClickedButtonOn2()//打开红外开关
 		pcData[7] = 0xE2;
 		psWriteData(m_pHandleComm, pcData, 8);
 		TRACE(pcData);
-		//lRet = m_cComPortPowerSta.RecData(pcRev, 8, &dwRev);
-		//if (lRet && pcRev[4] == 0xFF) {
-		//	csMsg.Format(L"打开红外开关\n");
-		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		//	TRACE(csMsg);
-		//}
-		ButtonOn2 = true;
-		csMsg.Format(L"打开红外开关\n");
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		TRACE(csMsg);
+		Sleep(200);
+		if (ButtonOn2) {
+			csMsg.Format(L"打开红外开关\n");
+			GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+			TRACE(csMsg);
+		}
+		//ButtonOn2 = true;
+		//csMsg.Format(L"打开红外开关\n");
+		//GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+		//TRACE(csMsg);
 		if (drawing)
 		{
 			SetTimer(2, 500, NULL);
@@ -757,16 +754,16 @@ void CPowerStaDemoDlg::OnBnClickedButtonOff2()//红外开关关闭
 		pcData[6] = 0xCD;
 		pcData[7] = 0x12;
 		psWriteData(m_pHandleComm, pcData, 8);
+		Sleep(200);
 		//lRet = m_cComPortPowerSta.RecData(pcRev, 8, &dwRev);
-		//if (lRet && pcRev[4] == 0x00) {
-		//	csMsg.Format(L"关闭红外开关\n");
-		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		//	TRACE(csMsg);
-		//}
-		ButtonOn2 = false;
-		csMsg.Format(L"关闭红外开关\n");
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		TRACE(csMsg);
+		if (!ButtonOn2) {
+			csMsg.Format(L"关闭红外开关\n");
+			GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+			TRACE(csMsg);
+		}
+		//csMsg.Format(L"关闭红外开关\n");
+		//GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+		//TRACE(csMsg);
 	}
 }
 
@@ -777,7 +774,7 @@ void CPowerStaDemoDlg::OnBnClickedButtonOn1()//可见开
 	CString csMsg;
 	char pcData[8], pcRev[8];
 	DWORD dwRev = 0;
-	LONG	lRet;
+	LONG lRet;
 	if (m_pHandleComm && m_bPowerstaConnected)
 	{
 		if (drawing)
@@ -800,16 +797,16 @@ void CPowerStaDemoDlg::OnBnClickedButtonOn1()//可见开
 		pcData[6] = 0x8D;
 		pcData[7] = 0x55;
 		psWriteData(m_pHandleComm, pcData, 8);
-		//lRet = m_cComPortPowerSta.RecData(pcRev, 8, &dwRev);
-		//if (lRet && pcRev[4] == 0xFF) {
-		//	csMsg.Format(L"打开可见开关\n");
-		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		//	TRACE(csMsg);
-		//}
-		ButtonOn1 = true;
-		csMsg.Format(L"打开可见开关\n");
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		TRACE(csMsg);
+		Sleep(200);
+		if (ButtonOn1) {
+			csMsg.Format(L"打开可见开关\n");
+			GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+			TRACE(csMsg);
+		}
+		//ButtonOn1 = true;
+		//csMsg.Format(L"打开可见开关\n");
+		//GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+		//TRACE(csMsg);
 		if (drawing)
 		{
 			SetTimer(2, 500, NULL);
@@ -837,16 +834,16 @@ void CPowerStaDemoDlg::OnBnClickedButtonOff1()//可见关
 		pcData[6] = 0xCC;
 		pcData[7] = 0xA5;
 		psWriteData(m_pHandleComm, pcData, 8);
-		//lRet = m_cComPortPowerSta.RecData(pcRev, 8, &dwRev);
-		//if (lRet && pcRev[4] == 0x00) {
-		//	csMsg.Format(L"关闭可见开关\n");
-		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		//	TRACE(csMsg);
-		//}
-		ButtonOn1 = false;
-		csMsg.Format(L"关闭可见开关\n");
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		TRACE(csMsg);
+		Sleep(200);
+		if (!ButtonOn1) {
+			csMsg.Format(L"关闭可见开关\n");
+			GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+			TRACE(csMsg);
+		}
+		//ButtonOn1 = false;
+		//csMsg.Format(L"关闭可见开关\n");
+		//GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+		//TRACE(csMsg);
 	}
 }
 
@@ -869,16 +866,17 @@ void CPowerStaDemoDlg::OnBnClickedButtonOff3()//关闭紫外开关
 		pcData[6] = 0xCC;
 		pcData[7] = 0xC3;
 		psWriteData(m_pHandleComm, pcData, 8);
+		Sleep(200);
 		//lRet = m_cComPortPowerSta.RecData(pcRev, 8, &dwRev);
-		//if (lRet && pcRev[4] == 0x00) {
-		//	csMsg.Format(L"关闭紫外开关\n");
-		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		//	TRACE(csMsg);
-		//}
-		ButtonOn3 = false;
-		csMsg.Format(L"关闭紫外开关\n");
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		TRACE(csMsg);
+		if (!ButtonOn3) {
+			csMsg.Format(L"关闭紫外开关\n");
+			GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+			TRACE(csMsg);
+		}
+		//ButtonOn3 = false;
+		//csMsg.Format(L"关闭紫外开关\n");
+		//GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+		//TRACE(csMsg);
 	}
 }
 
@@ -914,16 +912,16 @@ void CPowerStaDemoDlg::OnBnClickedButtonOn3()//开启紫外开关
 		pcData[6] = 0x8D;
 		pcData[7] = 0x33;
 		psWriteData(m_pHandleComm, pcData, 8);
-		//lRet = m_cComPortPowerSta.RecData(pcRev, 8, &dwRev);
-		//if (lRet && pcRev[4] == 0xFF) {
-		//	csMsg.Format(L"打开紫外开关\n");
-		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		//	TRACE(csMsg);
-		//}
-		ButtonOn3 = true;
-		csMsg.Format(L"打开紫外开关\n");
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-		TRACE(csMsg);
+		Sleep(500);
+		if (ButtonOn3) {
+			csMsg.Format(L"打开紫外开关\n");
+			GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+			TRACE(csMsg);
+		}
+		//ButtonOn3 = true;
+		//csMsg.Format(L"打开紫外开关\n");
+		//GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+		//TRACE(csMsg);
 		if (drawing)
 		{
 			SetTimer(2, 500, NULL);

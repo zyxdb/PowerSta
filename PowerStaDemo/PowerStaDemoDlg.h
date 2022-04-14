@@ -108,20 +108,21 @@ public:
 	time_t m_timeStart;
 	HANDLE  hThread_SendData = NULL;
 	HANDLE  hThread_KeepListen = 0;
+	bool ButtonOn1 = false;
+	bool ButtonOn2 = false;
+	bool ButtonOn3 = false;
 private:
 	void drawMoving();
 	double m_HightSpeedChartArray[57600];
 	double m_X[57600];
-	unsigned int m_count = 0;
+	int m_count = -1;
 	double DCsum = 0;
 	const size_t m_c_arrayLength;
 	void LeftMoveArray(double* ptr, size_t length, double data);
 	void AcceptData(int StaBit);
 	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
 	bool drawing = false;
-	bool ButtonOn1 = false;
-	bool ButtonOn2 = false;
-	bool ButtonOn3 = false;
+
 
 public:
 //	afx_msg void OnBnClickedButtonDraw();
