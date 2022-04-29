@@ -56,7 +56,7 @@ void SendDataThread(LPVOID lpParameter)
 			cs.Append(L"\n");
 			TRACE(cs);
 		}
-		Sleep(500);
+		Sleep(150);
 		LONG XY = commPort->RecData(pcDataRev, commPort->m_dwFrameSize, &dwRet);
 		if (XY && commPort->callbackFunc)
 		{

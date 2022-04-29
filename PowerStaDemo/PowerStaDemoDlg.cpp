@@ -34,16 +34,6 @@ int i_count=0;
 double rcv_data;
 void callbackFunc(PCHAR  pcData, DWORD  dwDataSize)
 {
-	//int i;
-	//double sum, avg, DCsum, DC;
-	//sum = avg = DCsum = DC =  0;
-	//double y_sum[10000];
-	//if ((pcData[0] == 0x0D || pcData[0] == 0x0C || pcData[0] == 0x0B) && pcData[4] == 0xFF) {
-	//	if(pcData[0] == 0x0D) pPSDlg->ButtonOn3 = true;
-	//	else if(pcData[0] == 0x0C) pPSDlg->ButtonOn2 = true;
-	//	else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = true;
-	//	return;
-	//}
 	if (pcData[0] == 0x0D || pcData[0] == 0x0C || pcData[0] == 0x0B) {
 		if (pcData[4] == 0x00) {
 			if (pcData[0] == 0x0D) pPSDlg->ButtonOn3 = false;
@@ -277,6 +267,7 @@ void CPowerStaDemoDlg::PowerStaSettingEnable(BOOL bEnable)
 	GetDlgItem(IDC_BUTTON_POWER_SET)->EnableWindow(bEnable);
 	GetDlgItem(IDC_BUTTON1)->EnableWindow(bEnable);
 	GetDlgItem(IDC_BUTTON2)->EnableWindow(bEnable);
+	GetDlgItem(IDC_BUTTON_DATA_SAVE)->EnableWindow(bEnable);
 }
 
 
@@ -307,20 +298,16 @@ HBRUSH CPowerStaDemoDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 			break;
 		
 		case IDC_STATIC_POWER_TITLE:
-		
 			pDC->SetTextColor(RGB(0,0,255));
 			break;
 
 		case IDC_STATIC_average:
-
 			pDC->SetTextColor(RGB(0, 0, 255));
 			break;
 
 		case IDC_STATIC_DC:
-
 			pDC->SetTextColor(RGB(0, 0, 255));
 			break;
-
 	}
 	return hbr;
 }
@@ -338,7 +325,7 @@ void CPowerStaDemoDlg::OnStaticClickedPowerStaConnect()//连接串口
 		bRet = psDisconnectDevice(m_pHandleComm);
 		if (bRet)
 		{
-			OnBnClickedButton2();
+			//OnBnClickedButton2();
 			GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(L"激光器串口关闭成功！");
 			m_bPowerstaConnected = false;
 		}
@@ -485,7 +472,7 @@ void CPowerStaDemoDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	if (2 == nIDEvent)
 	{
-		++m_count;
+		//++m_count;
 		drawMoving();
 	}
 	CDialogEx::OnTimer(nIDEvent);
@@ -502,11 +489,7 @@ void CPowerStaDemoDlg::drawMoving()
 	//AcceptData(true);
 	if (m_pHandleComm && m_bPowerstaConnected && rcv_data)
 	{
-		//lRet = m_cComPortPowerSta.RecData(pcRev, 8, &dwRev);
-		//if (lRet) {
-		//	m_chartctrl.EnableRefresh(false);
-		//	//画图测试
-		//}
+		m_count++;
 		m_chartctrl.EnableRefresh(false);
 		//画图测试
 		/**
@@ -521,26 +504,28 @@ void CPowerStaDemoDlg::drawMoving()
 		CString cs = L"";
 		cs.Format(L"%.6f", rcv_data);//实时功率 
 		pPSDlg->m_cStaticPower.SetWindowText(cs);
-		//for (int i = 0; i <= m_count; i++)//计算均值
-		//{
-		//	sum += m_HightSpeedChartArray[i];
-		//}
 		m_HightSpeedChartArray_sum += rcv_data;
-		avg = m_HightSpeedChartArray_sum / m_count;
+		avg = m_HightSpeedChartArray_sum / (m_count+1);
 		cs.Format(L"%.6f", avg);
 		pPSDlg->m_cStaticPowerAvg.SetWindowText(cs);
 		DCsum = 0;
-		for (int i = 1; i <= m_count; i++)//计算方差
+		for (int i = 0; i <= m_count; i++)//计算方差
 		{
 			DCsum += pow(m_HightSpeedChartArray[i] - avg, 2);
 		}
-		//if (m_count>=1)
-		//{
-		//	DCsum += pow(m_HightSpeedChartArray[m_count] - avg, 2);
-		//}
-		DC = pow((DCsum / m_count), 0.5);
+		DC = pow((DCsum / (m_count + 1)), 0.5);
 		cs.Format(L"%.6f", DC);
 		pPSDlg->m_cStaticPowerDC.SetWindowText(cs);
+		csMsg.Format(L"绘图中...\n");
+		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+	}
+	else {
+		csMsg.Format(L"未接收到功率数值！\n");
+		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+	}
+	if (m_count == 14399) {
+		OnBnClickedButtonDataSave();
+		OnBnClickedButton1();
 	}
 }
 /// 
@@ -590,7 +575,13 @@ void CPowerStaDemoDlg::AcceptData(int StaBit)
 void CPowerStaDemoDlg::OnBnClickedButton1()//接受数据并开始绘图
 {
 	// TODO: 在此添加控件通知处理程序代码
-	AcceptData(1);
+	if (drawing)
+	{
+		AcceptData(2);
+	}
+	else {
+		AcceptData(1);
+	}
 	KillTimer(2);
 	ZeroMemory(&m_HightSpeedChartArray, sizeof(double)*m_c_arrayLength);
 	m_count = -1;
@@ -605,84 +596,105 @@ void CPowerStaDemoDlg::OnBnClickedButton1()//接受数据并开始绘图
 }
 
 
-void CPowerStaDemoDlg::OnBnClickedButton2()//结束绘图
+void CPowerStaDemoDlg::OnBnClickedButton2()//暂停绘图
 {
 	// TODO: 在此添加控件通知处理程序代码
-	AcceptData(0);
-	KillTimer(2);
-	m_count = -1;
-	drawing = false;
-	rcv_data = 0;
-	ZeroMemory(&m_HightSpeedChartArray, sizeof(double)*m_c_arrayLength);
+	if (drawing)
+	{
+		AcceptData(-1);
+		KillTimer(2);
+		drawing = false;
+		GetDlgItem(IDC_BUTTON2)->SetWindowTextW(L"恢复");
+	}
+	else {
+		AcceptData(2);
+		SetTimer(2, 500, NULL);
+		drawing = true;
+		GetDlgItem(IDC_BUTTON2)->SetWindowTextW(L"暂停");
+	}
 }
 
 
 void CPowerStaDemoDlg::OnBnClickedButtonDataSave()
 {
-	TCHAR szFilter[] = _T("CSV文件(*.csv)|*.csv||");
-	CFileDialog cFileDialog(FALSE, _T("csv"), NULL, OFN_PATHMUSTEXIST, szFilter, this);
-	CString csFileName;
-	if (IDOK == cFileDialog.DoModal())
-	{
-		csFileName = cFileDialog.GetPathName();
-		TChartString fileName;
-		CRect crect;
-		CString w;
-		int q = csFileName.Find('.');
-		w = csFileName.Left(q);
-		w.AppendFormat(L".png");
-		fileName = w;
-		crect.SetRect(0, 0, 1920, 1080);                      //set the size of the image
-		m_chartctrl.SaveAsImage(fileName, crect, 32, GUID_NULL); //savethe image
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(L"曲线保存成功!");
+	// 获取当前时间，转换为字符串，格式如：2022_0429_1751
+	CTime time = CTime::GetCurrentTime(); ///构造CTime对象
+	CString m_strTime = time.Format("%Y_%m%d_%H%M");
 
-		ofstream outFile;
-		int i = 1;
-		outFile.open(csFileName, ios::out); // 打开模式可省略  
-		outFile << "时间/S" << ',' << "功率/mw" << ',' << "标准差" << ',' << "平均功率/mw" << ',' << "当前功率/mw" << endl;
-		//m_count = 40000;
-		//if (m_count > 1) {
-		//	for (i = 1; i <= m_count; i++)
-		//	{
-		//		outFile << m_X[i] << ',' << m_HightSpeedChartArray[i] << endl;
-		//	}
-		//}
-		for (i = 0; i <= m_count; i++)
-		{
-			outFile << m_X[i] << ',' << m_HightSpeedChartArray[i] << endl;
-		}
-		outFile.close();
-		ifstream inFile(csFileName, ios::in);
-		vector<string>Content_1;//存放文件中的内容
-		double tmp[3];
-		tmp[0] = DC;
-		tmp[1] = avg;
-		tmp[2] = rcv_data;
-		string str_1;
-		if (inFile.fail()==0)
-		{
-			int j = 0;
-			while (getline(inFile, str_1))
-			{
-				Content_1.push_back(str_1);
-				j++;
-			}
-		}
-		inFile.close();
-		ofstream File_1(csFileName);
-		for (int i = 0; i < Content_1.size(); i++)
-		{
-			if (i==1)
-			{
-				File_1 << Content_1[i] << ',' << tmp[0] << ',' << tmp[1] << ',' << tmp[2] << endl;
-			}
-			else
-			{
-				File_1 << Content_1[i] << endl;
-			}
-		}
-		File_1.close();
+	//TCHAR szFilter[] = _T("CSV文件(*.csv)|*.csv||");
+	//CFileDialog cFileDialog(FALSE, _T("csv"), NULL, OFN_PATHMUSTEXIST, szFilter, this);
+	CString csFileName;
+
+	// 获取当前exe文件路径，以path保存
+	char exeFullPath[MAX_PATH]; // Full path
+	string strPath = "";
+	GetModuleFileNameA(NULL, exeFullPath, MAX_PATH);
+	strPath = (string)exeFullPath;    // Get full path of the file
+	int pos = strPath.find_last_of('\\', strPath.length());
+	string path = strPath.substr(0, pos) + "\\";  // Return the directory without the file name
+
+	//csFileName = cFileDialog.GetPathName();
+	csFileName = path.c_str();
+	csFileName.AppendFormat(m_strTime);
+	// 判断是否有重名文件夹，没有的话就新建一个文件夹
+	if (!PathIsDirectory(csFileName))  
+	{
+		::CreateDirectory(csFileName, 0);
 	}
+	csFileName.AppendFormat(L"\\");
+	csFileName.AppendFormat(m_strTime);
+	TChartString fileName;
+	CRect crect;
+	CString pic_path = csFileName;
+	//int q = csFileName.Find('.');
+	//w = csFileName.Left(q);
+	// 保存图片的操作
+	pic_path.AppendFormat(L".png");
+	fileName = pic_path;
+	crect.SetRect(0, 0, 1920, 1080);                      //set the size of the image
+	m_chartctrl.SaveAsImage(fileName, crect, 32, GUID_NULL); //savethe image
+	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(L"曲线保存成功!");
+
+	// 保存csv文件的操作
+	csFileName.AppendFormat(L".csv");
+	ofstream outFile;
+	outFile.open(csFileName, ios::out); // 打开模式可省略  
+	outFile << "时间/S" << ',' << "功率/mw" << ',' << "标准差" << ',' << "平均功率/mw" << ',' << "当前功率/mw" << endl;
+	for (int i = 0; i <= m_count; i++)
+	{
+		outFile << m_X[i] << ',' << m_HightSpeedChartArray[i] << endl;
+	}
+	outFile.close();
+	ifstream inFile(csFileName, ios::in);
+	vector<string>Content_1;//存放文件中的内容
+	double tmp[3];
+	tmp[0] = DC;
+	tmp[1] = avg;
+	tmp[2] = rcv_data;
+	string str_1;
+	if (inFile.fail() == 0)
+	{
+		int j = 0;
+		while (getline(inFile, str_1))
+		{
+			Content_1.push_back(str_1);
+			j++;
+		}
+	}
+	inFile.close();
+	ofstream File_1(csFileName);
+	for (int i = 0; i < Content_1.size(); i++)
+	{
+		if (i == 1)
+		{
+			File_1 << Content_1[i] << ',' << tmp[0] << ',' << tmp[1] << ',' << tmp[2] << endl;
+		}
+		else
+		{
+			File_1 << Content_1[i] << endl;
+		}
+	}
+	File_1.close();
 }
 
 void CPowerStaDemoDlg::OnBnClickedButtonOn2()//打开红外开关

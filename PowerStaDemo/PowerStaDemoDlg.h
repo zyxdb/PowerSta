@@ -113,8 +113,8 @@ public:
 	bool ButtonOn3 = false;
 private:
 	void drawMoving();
-	double m_HightSpeedChartArray[57600];
-	double m_X[57600];
+	double m_HightSpeedChartArray[14450];
+	double m_X[14450];
 	int m_count = -1;
 	double DCsum = 0;
 	const size_t m_c_arrayLength;
