@@ -56,7 +56,7 @@ void SendDataThread(LPVOID lpParameter)
 			cs.Append(L"\n");
 			TRACE(cs);
 		}
-		Sleep(150);
+		Sleep(400);
 		LONG XY = commPort->RecData(pcDataRev, commPort->m_dwFrameSize, &dwRet);
 		if (XY && commPort->callbackFunc)
 		{
@@ -154,7 +154,7 @@ PVOID psConnectDevice(DWORD  dwComm, DWORD  dwFrameSize, CallbackFunction callba
 		lErrorCode = ERROR_NOT_ENOUGH_MEMORY;
 		return NULL;
 	}
-	if (dwComm > 9)
+	if (dwComm > 20)
 	{
 		pcCommName.Format(_T("\\\\.\\COM%d"), dwComm);
 	}

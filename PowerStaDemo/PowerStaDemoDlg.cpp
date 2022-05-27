@@ -47,13 +47,15 @@ void callbackFunc(PCHAR  pcData, DWORD  dwDataSize)
 		}
 		return;
 	}
-	//CString cs=L"接收：";
-	//for (int i = 0; i < dwDataSize; i++)
-	//{
-	//	cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
-	//}
-	//cs.Append(L"\n");
-	//TRACE(cs);
+	if (pcData[0] != 0x01) return;
+	//if (pcData[1] != 0xa1) return;
+	CString cs=L"接收：";
+	for (int i = 0; i < dwDataSize; i++)
+	{
+		cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
+	}
+	cs.Append(L"\n");
+	TRACE(cs);
 	if (pPSDlg)
 	{
 		CString str;
@@ -187,6 +189,17 @@ BOOL CPowerStaDemoDlg::OnInitDialog()
 	m_cComboPowerstaCommCtl.AddString(L"COM7");
 	m_cComboPowerstaCommCtl.AddString(L"COM8");
 	m_cComboPowerstaCommCtl.AddString(L"COM9");
+	m_cComboPowerstaCommCtl.AddString(L"COM10");
+	m_cComboPowerstaCommCtl.AddString(L"COM11");
+	m_cComboPowerstaCommCtl.AddString(L"COM12");
+	m_cComboPowerstaCommCtl.AddString(L"COM13");
+	m_cComboPowerstaCommCtl.AddString(L"COM14");
+	m_cComboPowerstaCommCtl.AddString(L"COM15");
+	m_cComboPowerstaCommCtl.AddString(L"COM16");
+	m_cComboPowerstaCommCtl.AddString(L"COM17");
+	m_cComboPowerstaCommCtl.AddString(L"COM18");
+	m_cComboPowerstaCommCtl.AddString(L"COM19");
+	m_cComboPowerstaCommCtl.AddString(L"COM20");
 	m_cComboPowerstaCommCtl.SetCurSel(2);
 	
 	m_cFontResult.CreateFont(35,                  // nHeight
