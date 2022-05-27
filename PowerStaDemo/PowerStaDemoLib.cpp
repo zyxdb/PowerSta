@@ -154,9 +154,9 @@ PVOID psConnectDevice(DWORD  dwComm, DWORD  dwFrameSize, CallbackFunction callba
 		lErrorCode = ERROR_NOT_ENOUGH_MEMORY;
 		return NULL;
 	}
-	if (dwComm > 20)
+	if (dwComm > 9)
 	{
-		pcCommName.Format(_T("\\\\.\\COM%d"), dwComm);
+		pcCommName.Format(L"\\\\.\\COM%d", dwComm);
 	}
 	else
 	{

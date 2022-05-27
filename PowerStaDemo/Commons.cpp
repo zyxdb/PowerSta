@@ -41,7 +41,7 @@ BOOL Cport::OpenPort(LPCWSTR pcCommName,bool OVERLOOP)
 	);
 	*/
 	m_hComm = CreateFile(pcCommName,GENERIC_READ|GENERIC_WRITE,0,NULL,OPEN_EXISTING,style,NULL);
-	if (m_hComm ==INVALID_HANDLE_VALUE){
+	if (m_hComm == INVALID_HANDLE_VALUE){
 		return false;
 	}
 	GetCommState(m_hComm,&Dcb);
@@ -53,7 +53,7 @@ BOOL Cport::ClosePort()
 {
 	bool value=false;
 	m_bRunning = FALSE;
-	if (m_hComm && m_hComm !=INVALID_HANDLE_VALUE)
+	if (m_hComm && m_hComm != INVALID_HANDLE_VALUE)
 		value=CloseHandle(m_hComm);
 	Sleep(300);
 	return value;
