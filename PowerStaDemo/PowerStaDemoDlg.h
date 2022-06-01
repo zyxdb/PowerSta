@@ -102,7 +102,8 @@ public:
 	DWORD			m_fParam3;
 	DWORD			m_dwParam4;
 	double m_fPowerSetting;
-	CMFCTabCtrl m_tab;
+	//CMFCTabCtrl m_tab;
+
 	CChartCtrl m_chartctrl;
 	CChartLineSerie* m_pLineSerie;
 	time_t m_timeStart;

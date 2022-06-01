@@ -100,7 +100,7 @@ void CPowerStaDemoDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_PARAM_3, m_fParam3);
 	DDX_Text(pDX, IDC_EDIT_PARAM_4, m_dwParam4);
 	DDX_Text(pDX, IDC_EDIT_POWER_SET, m_fPowerSetting);
-	//DDX_Control(pDX, IDC_ChartCtrl1, m_chartctrl);
+	DDX_Control(pDX, IDC_CHART, m_chartctrl);
 	DDX_Control(pDX, IDC_STATIC_average, m_cStaticPowerAvg);
 	DDX_Control(pDX, IDC_STATIC_DC, m_cStaticPowerDC);
 }
@@ -145,22 +145,23 @@ BOOL CPowerStaDemoDlg::OnInitDialog()
 	//  执行此操作
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
-	CRect rect;
+
+	//CRect rect;
 	// TODO: 在此添加额外的初始化代码
 
 	//	m_HSChartCtrl.ShowWindow(SW_HIDE);
-	GetDlgItem(IDC_STATIC_Tab)->GetWindowRect(rect);
-	GetDlgItem(IDC_STATIC_Tab)->ShowWindow(SW_HIDE);
-	ScreenToClient(rect);
-	m_tab.Create(CMFCTabCtrl::STYLE_3D_ONENOTE,//控件样式，如最上面所演示 
-		rect,//控件区域
-		this,//控件的父窗口指针
-		1,//控件ID
-		CMFCTabCtrl::LOCATION_TOP);//标签位置	
-	m_tab.AutoSizeWindow(TRUE);//可以让对话框随tab显示区域而缩放，同时出发对话框的OnSize消息
+	//GetDlgItem(IDC_STATIC_Tab)->GetWindowRect(rect);
+	//GetDlgItem(IDC_STATIC_Tab)->ShowWindow(SW_HIDE);
+	//ScreenToClient(rect);
+	//m_tab.Create(CMFCTabCtrl::STYLE_3D_ONENOTE,//控件样式，如最上面所演示 
+	//	rect,//控件区域
+	//	this,//控件的父窗口指针
+	//	1,//控件ID
+	//	CMFCTabCtrl::LOCATION_TOP);//标签位置	
+	//m_tab.AutoSizeWindow(TRUE);//可以让对话框随tab显示区域而缩放，同时出发对话框的OnSize消息
 
 
-	m_chartctrl.Create(&m_tab, rect, 2);
+	//m_chartctrl.Create(&m_tab, rect, 2);
 	CChartAxis *pAxis = NULL;
 	//初始化坐标
 	pAxis = m_chartctrl.CreateStandardAxis(CChartCtrl::BottomAxis);
@@ -169,14 +170,14 @@ BOOL CPowerStaDemoDlg::OnInitDialog()
 	pAxis->SetAutomatic(true);
 	m_pLineSerie = m_chartctrl.CreateLineSerie();
 	UpdateData(FALSE);
-	m_tab.AddTab(&m_chartctrl, _T("实时功率"));
-	m_tab.SetActiveTab(0);//设置显示第一页；     
-	m_tab.ShowWindow(SW_SHOWNORMAL);
-	CRect TabBRect, TabTRect;
-	m_tab.GetWindowRect(rect);
-	ScreenToClient(rect);
-	m_tab.GetTabArea(TabTRect, TabBRect);
-	rect.top += TabTRect.Height();
+	//m_tab.AddTab(&m_chartctrl, _T("实时功率"));
+	//m_tab.SetActiveTab(0);//设置显示第一页；     
+	//m_tab.ShowWindow(SW_SHOWNORMAL);
+	//CRect TabBRect, TabTRect;
+	////m_tab.GetWindowRect(rect);
+	////ScreenToClient(rect);
+	//m_tab.GetTabArea(TabTRect, TabBRect);
+	//rect.top += TabTRect.Height();
 
 
 	//激光器端口选择空间
