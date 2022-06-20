@@ -408,7 +408,6 @@ void CPowerStaDemoDlg::OnBnClickedButtonPowerstaParamSetting()//参数设置
 	unsigned short * pusChkSum= (unsigned short *)(pcData + 6);
 	unsigned short * pusData = (unsigned short *)pcData;
 
-
 	if (m_pHandleComm && m_bPowerstaConnected)
 	{
 		if (drawing)
@@ -416,6 +415,7 @@ void CPowerStaDemoDlg::OnBnClickedButtonPowerstaParamSetting()//参数设置
 			KillTimer(2);
 			AcceptData(-1);
 		}
+		Sleep(300);
 		pcData[0] = 0x17;
 		pcData[1] = 0x02;
 		*pdwParam = m_fParam2;
@@ -469,6 +469,7 @@ void CPowerStaDemoDlg::OnBnClickedButtonPowerSet()
 		pcData[1] = 0x01;
 		*pdwParam = round(m_fPowerSetting*exp2(23) / 5);
 		*pusChkSum = unsigned short(pusData[0] + pusData[1] + pusData[2]);
+		Sleep(400);
 		psWriteData(m_pHandleComm, pcData, 8);
 		csMsg.Format(L"发送：设置功率=%f, 校验=0x%04x\n", m_fPowerSetting, (unsigned short)(*pusChkSum & 0xffff));
 		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
@@ -497,10 +498,19 @@ void CPowerStaDemoDlg::drawMoving()
 {
 	CString csMsg;
 	DWORD dwRev = 0;
-	LONG	lRet;
+	//LONG	lRet;
 	char pcData[] = { 0x17,0x06,0x00, 0x00 ,0x00 ,0x00 ,0x1c ,0x04 };
-	psWriteData(m_pHandleComm, pcData, 8);
-	//AcceptData(true);
+	//try
+	//{
+	//	psWriteData(m_pHandleComm, pcData, 8);
+	//}
+	//catch (std::exception& e)
+	//{
+	//	cout << e.what() << endl;
+	//	csMsg.Format(L"发送串口数据异常！\n");
+	//}
+	//psWriteData(m_pHandleComm, pcData, 8);
+	//AcceptData(1);
 	if (m_pHandleComm && m_bPowerstaConnected && rcv_data)
 	{
 		m_count++;
@@ -566,29 +576,36 @@ void CPowerStaDemoDlg::LeftMoveArray(double* ptr, size_t length, double data)
 */
 void CPowerStaDemoDlg::AcceptData(int StaBit)
 {
-	if (StaBit==1) {
-		SuspendThread(hThread_KeepListen);
-		hThread_SendData = psSendData(m_pHandleComm, 8);
+	Cport *commPort = (Cport*)m_pHandleComm;
+	if (StaBit == 1 || StaBit == 2) {
+		commPort->drawing = true;
 	}
-	else if (StaBit == 0) {
-		SuspendThread(hThread_SendData);
-		ResumeThread(hThread_KeepListen);
-		//CloseHandle(hThread_SendData);
-		//ExitThread((DWORD)hThread_SendData);
-	}
-	else if (StaBit == -1) {
-		SuspendThread(hThread_SendData);
-		ResumeThread(hThread_KeepListen);
-	}
-	else if (StaBit == 2) {
-		ResumeThread(hThread_SendData);
-		SuspendThread(hThread_KeepListen);
-	}
+	else commPort->drawing = false;
+
+	//if (StaBit==1) {
+	//	SuspendThread(hThread_KeepListen);
+	//	hThread_SendData = psSendData(m_pHandleComm, 8);
+	//}
+	//else if (StaBit == 0) {
+	//	SuspendThread(hThread_SendData);
+	//	ResumeThread(hThread_KeepListen);
+	//	//CloseHandle(hThread_SendData);
+	//	//ExitThread((DWORD)hThread_SendData);
+	//}
+	//else if (StaBit == -1) {
+	//	SuspendThread(hThread_SendData);
+	//	ResumeThread(hThread_KeepListen);
+	//}
+	//else if (StaBit == 2) {
+	//	ResumeThread(hThread_SendData);
+	//	SuspendThread(hThread_KeepListen);
+	//}
 }
 
 void CPowerStaDemoDlg::OnBnClickedButton1()//接受数据并开始绘图
 {
 	// TODO: 在此添加控件通知处理程序代码
+	Cport *commPort = (Cport*)m_pHandleComm;
 	if (drawing)
 	{
 		AcceptData(2);
@@ -613,17 +630,18 @@ void CPowerStaDemoDlg::OnBnClickedButton1()//接受数据并开始绘图
 void CPowerStaDemoDlg::OnBnClickedButton2()//暂停绘图
 {
 	// TODO: 在此添加控件通知处理程序代码
-	if (drawing)
+	Cport *commPort = (Cport*)m_pHandleComm;
+	if (commPort->drawing)
 	{
 		AcceptData(-1);
 		KillTimer(2);
-		drawing = false;
+		commPort->drawing = false;
 		GetDlgItem(IDC_BUTTON2)->SetWindowTextW(L"恢复");
 	}
 	else {
 		AcceptData(2);
 		SetTimer(2, 500, NULL);
-		drawing = true;
+		commPort->drawing = true;
 		GetDlgItem(IDC_BUTTON2)->SetWindowTextW(L"暂停");
 	}
 }

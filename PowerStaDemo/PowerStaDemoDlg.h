@@ -122,8 +122,6 @@ private:
 	void LeftMoveArray(double* ptr, size_t length, double data);
 	void AcceptData(int StaBit);
 	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
-	bool drawing = false;
-
 
 public:
 //	afx_msg void OnBnClickedButtonDraw();
@@ -141,4 +139,5 @@ public:
 	afx_msg void OnBnClickedButtonOff1();
 	afx_msg void OnBnClickedButtonOff3();
 	afx_msg void OnBnClickedButtonOn3();
+	bool drawing = false;
 };

@@ -15,9 +15,14 @@ void ReceiveDataThread(LPVOID lpParameter)
 		lErrorCode = ERROR_INVALID_PARAMETER;
 		return;
 	}
+	char pcData[8] = { 0x17,0x06,0x00, 0x00 ,0x00 ,0x00 ,0x1c ,0x04 };
 	char* pcDataRev = new char[commPort->m_dwFrameSize];//8个bit
 	while (commPort->m_bRunning)
 	{
+		if (commPort->drawing) {
+			commPort->SendData(pcData, 8);
+			Sleep(400);
+		}
 		DWORD dwRet;
 		memset(pcDataRev, 0, commPort->m_dwFrameSize);
 		LONG XY = commPort->RecData(pcDataRev, commPort->m_dwFrameSize, &dwRet);//数据首地址,要读取的数据最大字节数,用来接收返回成功读取的数据字节数
@@ -25,6 +30,7 @@ void ReceiveDataThread(LPVOID lpParameter)
 		{
 			commPort->callbackFunc(pcDataRev, dwRet);
 		}
+		//Sleep(400);
 	}
 	delete[] pcDataRev;
 }
@@ -37,30 +43,28 @@ void SendDataThread(LPVOID lpParameter)
 		lErrorCode = ERROR_INVALID_PARAMETER;
 		return;
 	}
-	char pcData[8] = { 0x17,0x06,0x00, 0x00 ,0x00 ,0x00 ,0x1c ,0x04 };
+	//char pcData[8] = { 0x17,0x06,0x00, 0x00 ,0x00 ,0x00 ,0x1c ,0x04 };
 	char* pcDataRev = new char[commPort->m_dwFrameSize];//8个bit
-	int count = 0;
-	char rec_bit1,rec_bit2;
+	//int count = 0;
+	//char rec_bit1,rec_bit2 = 0xA1;
 	while (commPort->m_bRunning)
 	{
 		DWORD dwRet;
 		memset(pcDataRev, 0, commPort->m_dwFrameSize);
-		if (count == 0 || rec_bit2 == 0xA1) {
-			count = 1;
-			commPort->SendData(pcData, 8);
-			CString cs = L"发送：";
-			for (int i = 0; i < 8; i++)
-			{
-				cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
-			}
-			cs.Append(L"\n");
-			TRACE(cs);
-		}
+		//count = 1;
+		//commPort->SendData(pcData, 8);
+		//CString cs = L"发送：";
+		//for (int i = 0; i < 8; i++)
+		//{
+		//	cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
+		//}
+		//cs.Append(L"\n");
+		//TRACE(cs);
 		Sleep(400);
 		LONG XY = commPort->RecData(pcDataRev, commPort->m_dwFrameSize, &dwRet);
 		if (XY && commPort->callbackFunc)
 		{
-			rec_bit2 = pcDataRev[1];
+			//rec_bit2 = pcDataRev[1];
 			commPort->callbackFunc(pcDataRev, dwRet);
 		}
 	}
@@ -124,7 +128,7 @@ PVOID psKeepListen(PVOID m_pHandleComm) {
 	);
 	*/
 	DWORD dwThreadId = 1; //线程id
-	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ReceiveDataThread, commPort, 0, NULL);
+	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ReceiveDataThread, commPort, 0, &dwThreadId);
 	if (hThread != NULL)//如果为NULL，表示创建失败
 	{
 		//CloseHandle(hThread);
@@ -166,6 +170,7 @@ PVOID psConnectDevice(DWORD  dwComm, DWORD  dwFrameSize, CallbackFunction callba
 	HANDLE  hThread=NULL;
 	commPort->m_dwFrameSize = dwFrameSize;
 	commPort->callbackFunc = callbackFunc;
+	commPort->drawing = false;
 	bResult = commPort->OpenPort((LPCWSTR)pcCommName, false);  //打开串口
 	return  commPort;
 	//if (bResult)

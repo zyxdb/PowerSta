@@ -29,6 +29,7 @@ public:
 	LONG SendData(char* pOutpuData,DWORD dwSize);                //发送数据
 	LONG RecData (char* pOutpuData,int size,DWORD* num);         //接受数据
 	COMSTAT ClearInputBuffer();
+	bool drawing = false;
 };
 
 #endif
