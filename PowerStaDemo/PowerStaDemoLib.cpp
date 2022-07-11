@@ -1,15 +1,56 @@
 #include "stdafx.h"
 #include "windows.h"
 #include "commons.h"
-//#include "PowerStaDemoDlg.h"
-
+#include "PowerStaDemo.h"
+#include "PowerStaDemoDlg.h"
 #include "PowerStaDemoLib.h"
+
+double rcv_data;
+void callbackFunc(CPowerStaDemoDlg *pPSDlg, PCHAR  pcData, DWORD  dwDataSize)
+{
+	if (pPSDlg == nullptr || pcData == nullptr) return;
+	if (pcData[0] == 0x0D || pcData[0] == 0x0C || pcData[0] == 0x0B) {
+		if (pcData[4] == 0x00) {
+			if (pcData[0] == 0x0D) pPSDlg->ButtonOn3 = false;
+			else if (pcData[0] == 0x0C) pPSDlg->ButtonOn2 = false;
+			else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = false;
+		}
+		else {
+			if (pcData[0] == 0x0D) pPSDlg->ButtonOn3 = true;
+			else if (pcData[0] == 0x0C) pPSDlg->ButtonOn2 = true;
+			else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = true;
+		}
+		return;
+	}
+	if (pcData[0] != 0x01) return;
+	//if (pcData[1] != 0xa1) return;
+	CString cs = L"接收：";
+	for (int i = 0; i < dwDataSize; i++)
+	{
+		cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
+	}
+	cs.Append(L"\n");
+	TRACE(cs);
+	if (pPSDlg)
+	{
+		CString str;
+		str.Format(L"%02X%02X%02X", (unsigned char)pcData[3], (unsigned char)pcData[4], (unsigned char)pcData[5]);//合并3个char
+		USES_CONVERSION;
+		string s(W2A(str));
+		const char* cstr = s.c_str();
+		int nTemp = (int)strtol(cstr, NULL, 16);//cstring转const char*
+		rcv_data = nTemp * 5 / exp2(23);
+	}
+}
+
 
 //数据接收函数
 LONG lErrorCode = 0;
 void ReceiveDataThread(LPVOID lpParameter)
 {
-	Cport *commPort=(Cport*)lpParameter;
+	CPowerStaDemoDlg* pdlgMain = (CPowerStaDemoDlg *)lpParameter;
+	Cport *commPort = (Cport*)pdlgMain->m_pHandleComm;
+	CString csMsg;
 	if (!commPort)
 	{
 		lErrorCode = ERROR_INVALID_PARAMETER;
@@ -24,16 +65,72 @@ void ReceiveDataThread(LPVOID lpParameter)
 			Sleep(400);
 		}
 		DWORD dwRet;
-		memset(pcDataRev, 0, commPort->m_dwFrameSize);
+		memset(pcDataRev, 0, 8);
 		LONG XY = commPort->RecData(pcDataRev, commPort->m_dwFrameSize, &dwRet);//数据首地址,要读取的数据最大字节数,用来接收返回成功读取的数据字节数
-		if (XY && commPort->callbackFunc)
+		if (XY)
 		{
-			commPort->callbackFunc(pcDataRev, dwRet);
+			callbackFunc(pdlgMain,pcDataRev, dwRet);
 		}
+		pdlgMain->currRevData = rcv_data;
 		//Sleep(400);
+
+		if (commPort->drawing && pdlgMain->m_bPowerstaConnected && rcv_data)
+		{
+			//pdlgMain->m_count++;
+			//pdlgMain->m_chartctrl.EnableRefresh(false);
+			////画图测试
+			///**
+			//* @author hlf
+			//* @description 2022/3/22 把x轴改成1秒刷新2次
+			//*/
+			//pdlgMain->m_X[pdlgMain->m_count] = double(pdlgMain->m_count) / 2;
+			//pdlgMain->m_HightSpeedChartArray[pdlgMain->m_count] = rcv_data;
+			//pdlgMain->m_pLineSerie->AddPoint(pdlgMain->m_X[pdlgMain->m_count], pdlgMain->m_HightSpeedChartArray[pdlgMain->m_count]);
+			//pdlgMain->m_chartctrl.EnableRefresh(true);
+
+			// 显示实时功率
+			pdlgMain->avg = 0;
+			pdlgMain->DC = 0;
+			CString cs = L"";
+			cs.Format(L"%.6f", rcv_data);//实时功率 
+			pdlgMain->m_cStaticPower.SetWindowText(cs);
+
+			// 显示平均值
+			pdlgMain->m_HightSpeedChartArray_sum += rcv_data;
+			pdlgMain->avg = pdlgMain->m_HightSpeedChartArray_sum / (pdlgMain->m_count + 1);
+			cs.Format(L"%.6f", pdlgMain->avg);
+			pdlgMain->m_cStaticPowerAvg.SetWindowText(cs);
+
+			//计算和显示方差
+			pdlgMain->DCsum = 0;
+			for (int i = 0; i <= pdlgMain->m_count; i++)
+			{
+				pdlgMain->DCsum += pow(pdlgMain->m_HightSpeedChartArray[i] - pdlgMain->avg, 2);
+			}
+			pdlgMain->DC = pow((pdlgMain->DCsum / (pdlgMain->m_count + 1)), 0.5);
+			cs.Format(L"%.6f", pdlgMain->DC);
+			pdlgMain->m_cStaticPowerDC.SetWindowText(cs);
+			csMsg.Format(L"绘图中...\n");
+			pdlgMain->GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+
+			pdlgMain->PostMessage(WM_THREAD, THREAD_MEASURE_DATA);
+		}
+		else {
+			csMsg.Format(L"未接收到功率数值！\n");
+			pdlgMain->GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+		}
+		if (pdlgMain->m_count == 14399) {
+			pdlgMain->OnBnClickedButtonDataSave();
+			pdlgMain->OnBnClickedButton1();
+		}
 	}
 	delete[] pcDataRev;
 }
+
+/*
+/**
+* @author hlf
+* @description 2022/6/22 第二个线程已弃用。
 
 void SendDataThread(LPVOID lpParameter)
 {
@@ -90,7 +187,7 @@ PVOID psSendData(PVOID	m_pHandleComm, DWORD  dwFrameSize){
 	_In_ DWORD dwCreationFlags,                        //标志，可以选择挂起
 	_Out_opt_ LPDWORD lpThreadId                       //线程id
 	);
-	*/
+
 	DWORD dwThreadId = 0; //线程id
 	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)SendDataThread, commPort, 0, &dwThreadId);
 	if (hThread != NULL)//如果为NULL，表示创建失败
@@ -108,8 +205,11 @@ PVOID psSendData(PVOID	m_pHandleComm, DWORD  dwFrameSize){
 	}
 }
 
+*/
+
 PVOID psKeepListen(PVOID m_pHandleComm) {
-	Cport *commPort = (Cport*)m_pHandleComm;
+	CPowerStaDemoDlg* pdlgMain = (CPowerStaDemoDlg *)m_pHandleComm;
+	Cport *commPort = (Cport*)pdlgMain->m_pHandleComm;
 	if (!commPort)
 	{
 		lErrorCode = ERROR_NOT_ENOUGH_MEMORY;
@@ -128,7 +228,7 @@ PVOID psKeepListen(PVOID m_pHandleComm) {
 	);
 	*/
 	DWORD dwThreadId = 1; //线程id
-	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ReceiveDataThread, commPort, 0, &dwThreadId);
+	hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ReceiveDataThread, pdlgMain, 0, &dwThreadId);
 	if (hThread != NULL)//如果为NULL，表示创建失败
 	{
 		//CloseHandle(hThread);
