@@ -133,6 +133,8 @@ public:
 	CStatic m_cStaticPowerAvg;
 	// 标准差
 	CStatic m_cStaticPowerDC;
+	// 比值
+	CStatic m_cStaticPowerScale;
 	double DC, avg;
 	afx_msg void OnBnClickedButtonOn2();
 	afx_msg void OnBnClickedButtonOff2();

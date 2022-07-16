@@ -88,6 +88,11 @@ void ReceiveDataThread(LPVOID lpParameter)
 			//pdlgMain->m_pLineSerie->AddPoint(pdlgMain->m_X[pdlgMain->m_count], pdlgMain->m_HightSpeedChartArray[pdlgMain->m_count]);
 			//pdlgMain->m_chartctrl.EnableRefresh(true);
 
+			csMsg.Format(L"绘图中...\n");
+			pdlgMain->GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+
+			pdlgMain->PostMessage(WM_THREAD, THREAD_MEASURE_DATA);
+
 			// 显示实时功率
 			pdlgMain->avg = 0;
 			pdlgMain->DC = 0;
@@ -110,10 +115,11 @@ void ReceiveDataThread(LPVOID lpParameter)
 			pdlgMain->DC = pow((pdlgMain->DCsum / (pdlgMain->m_count + 1)), 0.5);
 			cs.Format(L"%.6f", pdlgMain->DC);
 			pdlgMain->m_cStaticPowerDC.SetWindowText(cs);
-			csMsg.Format(L"绘图中...\n");
-			pdlgMain->GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
 
-			pdlgMain->PostMessage(WM_THREAD, THREAD_MEASURE_DATA);
+			//计算和显示比值
+			double scale = pdlgMain->DC / pdlgMain->avg;
+			cs.Format(L"%.6f", scale);
+			pdlgMain->m_cStaticPowerDC.SetWindowText(cs);
 		}
 		else {
 			csMsg.Format(L"未接收到功率数值！\n");

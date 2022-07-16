@@ -102,6 +102,7 @@ void CPowerStaDemoDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CHART, m_chartctrl);
 	DDX_Control(pDX, IDC_STATIC_average, m_cStaticPowerAvg);
 	DDX_Control(pDX, IDC_STATIC_DC, m_cStaticPowerDC);
+	DDX_Control(pDX, IDC_STATIC_SCALE, m_cStaticPowerScale);
 }
 
 BEGIN_MESSAGE_MAP(CPowerStaDemoDlg, CDialogEx)
@@ -220,6 +221,7 @@ BOOL CPowerStaDemoDlg::OnInitDialog()
 	m_cStaticPower.SetFont(&m_cFontResult);
 	m_cStaticPowerAvg.SetFont(&m_cFontResult);
 	m_cStaticPowerDC.SetFont(&m_cFontResult);
+	m_cStaticPowerScale.SetFont(&m_cFontResult);
 	pPSDlg = this;
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -320,6 +322,9 @@ HBRUSH CPowerStaDemoDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 			break;
 
 		case IDC_STATIC_DC:
+			pDC->SetTextColor(RGB(0, 0, 255));
+			break;
+		case IDC_STATIC_SCALE:
 			pDC->SetTextColor(RGB(0, 0, 255));
 			break;
 	}
