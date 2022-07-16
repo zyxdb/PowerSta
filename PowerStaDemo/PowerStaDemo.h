@@ -30,3 +30,8 @@ public:
 };
 
 extern CPowerStaDemoApp theApp;
+
+
+#define THREAD_SELFCHECK_STATUS 0  
+#define THREAD_MEASURE_STATUS   1  
+#define THREAD_MEASURE_DATA     2  

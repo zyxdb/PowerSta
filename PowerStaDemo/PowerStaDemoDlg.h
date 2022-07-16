@@ -112,7 +112,7 @@ public:
 	bool ButtonOn1 = false;
 	bool ButtonOn2 = false;
 	bool ButtonOn3 = false;
-private:
+public:
 	void drawMoving();
 	double m_HightSpeedChartArray[14450];
 	double m_X[14450];
@@ -122,7 +122,8 @@ private:
 	void LeftMoveArray(double* ptr, size_t length, double data);
 	void AcceptData(int StaBit);
 	void OnGetMinMaxInfo(MINMAXINFO* lpMMI);
-
+	double currRevData = 0;
+	LRESULT	OnThreadMessage(WPARAM wParam, LPARAM lParam);
 public:
 //	afx_msg void OnBnClickedButtonDraw();
 	afx_msg void OnBnClickedButton1();
@@ -132,6 +133,8 @@ public:
 	CStatic m_cStaticPowerAvg;
 	// 标准差
 	CStatic m_cStaticPowerDC;
+	// 比值
+	CStatic m_cStaticPowerScale;
 	double DC, avg;
 	afx_msg void OnBnClickedButtonOn2();
 	afx_msg void OnBnClickedButtonOff2();
@@ -140,4 +143,8 @@ public:
 	afx_msg void OnBnClickedButtonOff3();
 	afx_msg void OnBnClickedButtonOn3();
 	bool drawing = false;
+	virtual void OnOK();
+	virtual BOOL PreTranslateMessage(MSG* pMsg);
 };
+
+#define WM_THREAD     WM_USER+100

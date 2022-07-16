@@ -30,43 +30,42 @@ using namespace std;
 // 用于应用程序“关于”菜单项的 CAboutDlg 对话框
 CPowerStaDemoDlg *pPSDlg = NULL;
 
-int i_count=0;
-double rcv_data;
-void callbackFunc(PCHAR  pcData, DWORD  dwDataSize)
-{
-	if (pcData[0] == 0x0D || pcData[0] == 0x0C || pcData[0] == 0x0B) {
-		if (pcData[4] == 0x00) {
-			if (pcData[0] == 0x0D) pPSDlg->ButtonOn3 = false;
-			else if (pcData[0] == 0x0C) pPSDlg->ButtonOn2 = false;
-			else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = false;
-		}
-		else {
-			if(pcData[0] == 0x0D) pPSDlg->ButtonOn3 = true;
-			else if(pcData[0] == 0x0C) pPSDlg->ButtonOn2 = true;
-			else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = true;
-		}
-		return;
-	}
-	if (pcData[0] != 0x01) return;
-	//if (pcData[1] != 0xa1) return;
-	CString cs=L"接收：";
-	for (int i = 0; i < dwDataSize; i++)
-	{
-		cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
-	}
-	cs.Append(L"\n");
-	TRACE(cs);
-	if (pPSDlg)
-	{
-		CString str;
-		str.Format(L"%02X%02X%02X", (unsigned char)pcData[3], (unsigned char)pcData[4], (unsigned char)pcData[5]);//合并3个char
-		USES_CONVERSION;
-		string s(W2A(str));
-		const char* cstr = s.c_str();
-		int nTemp = (int)strtol(cstr, NULL, 16);//cstring转const char*
-		rcv_data = nTemp * 5 / exp2(23);
-	}
-}
+//double rcv_data;
+//void callbackFunc(PCHAR  pcData, DWORD  dwDataSize)
+//{
+//	if (pcData[0] == 0x0D || pcData[0] == 0x0C || pcData[0] == 0x0B) {
+//		if (pcData[4] == 0x00) {
+//			if (pcData[0] == 0x0D) pPSDlg->ButtonOn3 = false;
+//			else if (pcData[0] == 0x0C) pPSDlg->ButtonOn2 = false;
+//			else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = false;
+//		}
+//		else {
+//			if(pcData[0] == 0x0D) pPSDlg->ButtonOn3 = true;
+//			else if(pcData[0] == 0x0C) pPSDlg->ButtonOn2 = true;
+//			else if (pcData[0] == 0x0B) pPSDlg->ButtonOn1 = true;
+//		}
+//		return;
+//	}
+//	if (pcData[0] != 0x01) return;
+//	//if (pcData[1] != 0xa1) return;
+//	CString cs=L"接收：";
+//	for (int i = 0; i < dwDataSize; i++)
+//	{
+//		cs.AppendFormat(L"%02X ", (unsigned char)pcData[i]);
+//	}
+//	cs.Append(L"\n");
+//	TRACE(cs);
+//	if (pPSDlg)
+//	{
+//		CString str;
+//		str.Format(L"%02X%02X%02X", (unsigned char)pcData[3], (unsigned char)pcData[4], (unsigned char)pcData[5]);//合并3个char
+//		USES_CONVERSION;
+//		string s(W2A(str));
+//		const char* cstr = s.c_str();
+//		int nTemp = (int)strtol(cstr, NULL, 16);//cstring转const char*
+//		rcv_data = nTemp * 5 / exp2(23);
+//	}
+//}
 
 
 
@@ -103,6 +102,7 @@ void CPowerStaDemoDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_CHART, m_chartctrl);
 	DDX_Control(pDX, IDC_STATIC_average, m_cStaticPowerAvg);
 	DDX_Control(pDX, IDC_STATIC_DC, m_cStaticPowerDC);
+	DDX_Control(pDX, IDC_STATIC_SCALE, m_cStaticPowerScale);
 }
 
 BEGIN_MESSAGE_MAP(CPowerStaDemoDlg, CDialogEx)
@@ -128,6 +128,7 @@ ON_BN_CLICKED(IDC_BUTTON_ON1, &CPowerStaDemoDlg::OnBnClickedButtonOn1)
 ON_BN_CLICKED(IDC_BUTTON_OFF1, &CPowerStaDemoDlg::OnBnClickedButtonOff1)
 ON_BN_CLICKED(IDC_BUTTON_OFF3, &CPowerStaDemoDlg::OnBnClickedButtonOff3)
 ON_BN_CLICKED(IDC_BUTTON_ON3, &CPowerStaDemoDlg::OnBnClickedButtonOn3)
+ON_MESSAGE(WM_THREAD, OnThreadMessage)
 END_MESSAGE_MAP()
 
 // CPowerStaDemoDlg 消息处理程序
@@ -220,6 +221,7 @@ BOOL CPowerStaDemoDlg::OnInitDialog()
 	m_cStaticPower.SetFont(&m_cFontResult);
 	m_cStaticPowerAvg.SetFont(&m_cFontResult);
 	m_cStaticPowerDC.SetFont(&m_cFontResult);
+	m_cStaticPowerScale.SetFont(&m_cFontResult);
 	pPSDlg = this;
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
@@ -322,6 +324,9 @@ HBRUSH CPowerStaDemoDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		case IDC_STATIC_DC:
 			pDC->SetTextColor(RGB(0, 0, 255));
 			break;
+		case IDC_STATIC_SCALE:
+			pDC->SetTextColor(RGB(0, 0, 255));
+			break;
 	}
 	return hbr;
 }
@@ -355,8 +360,8 @@ void CPowerStaDemoDlg::OnStaticClickedPowerStaConnect()//连接串口
 	}
 	else
 	{
-		m_pHandleComm = psConnectDevice(num + 1, 8, callbackFunc);
-		hThread_KeepListen = psKeepListen(m_pHandleComm);
+		m_pHandleComm = psConnectDevice(num + 1, 8);
+		/*hThread_KeepListen = psKeepListen(this);*/
 		if (m_pHandleComm)
 		{
 			bRet=psSetPort(m_pHandleComm, CBR_115200);
@@ -415,7 +420,7 @@ void CPowerStaDemoDlg::OnBnClickedButtonPowerstaParamSetting()//参数设置
 			KillTimer(2);
 			AcceptData(-1);
 		}
-		Sleep(300);
+		//Sleep(300);
 		pcData[0] = 0x17;
 		pcData[1] = 0x02;
 		*pdwParam = m_fParam2;
@@ -499,7 +504,7 @@ void CPowerStaDemoDlg::drawMoving()
 	CString csMsg;
 	DWORD dwRev = 0;
 	//LONG	lRet;
-	char pcData[] = { 0x17,0x06,0x00, 0x00 ,0x00 ,0x00 ,0x1c ,0x04 };
+	//char pcData[] = { 0x17,0x06,0x00, 0x00 ,0x00 ,0x00 ,0x1c ,0x04 };
 	//try
 	//{
 	//	psWriteData(m_pHandleComm, pcData, 8);
@@ -511,46 +516,52 @@ void CPowerStaDemoDlg::drawMoving()
 	//}
 	//psWriteData(m_pHandleComm, pcData, 8);
 	//AcceptData(1);
-	if (m_pHandleComm && m_bPowerstaConnected && rcv_data)
-	{
-		m_count++;
-		m_chartctrl.EnableRefresh(false);
-		//画图测试
-		/**
-		* @author hlf
-		* @description 2022/3/22 把x轴改成1秒刷新2次
-		*/
-		m_X[m_count] = double(m_count)/2;
-		m_HightSpeedChartArray[m_count] = rcv_data;
-		m_pLineSerie->AddPoint(m_X[m_count], m_HightSpeedChartArray[m_count]);
-		m_chartctrl.EnableRefresh(true);
-		avg = DC = 0;
-		CString cs = L"";
-		cs.Format(L"%.6f", rcv_data);//实时功率 
-		pPSDlg->m_cStaticPower.SetWindowText(cs);
-		m_HightSpeedChartArray_sum += rcv_data;
-		avg = m_HightSpeedChartArray_sum / (m_count+1);
-		cs.Format(L"%.6f", avg);
-		pPSDlg->m_cStaticPowerAvg.SetWindowText(cs);
-		DCsum = 0;
-		for (int i = 0; i <= m_count; i++)//计算方差
-		{
-			DCsum += pow(m_HightSpeedChartArray[i] - avg, 2);
-		}
-		DC = pow((DCsum / (m_count + 1)), 0.5);
-		cs.Format(L"%.6f", DC);
-		pPSDlg->m_cStaticPowerDC.SetWindowText(cs);
-		csMsg.Format(L"绘图中...\n");
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-	}
-	else {
-		csMsg.Format(L"未接收到功率数值！\n");
-		GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
-	}
-	if (m_count == 14399) {
-		OnBnClickedButtonDataSave();
-		OnBnClickedButton1();
-	}
+
+	//if (m_pHandleComm && m_bPowerstaConnected && rcv_data)
+	//{
+	//	m_count++;
+	//	m_chartctrl.EnableRefresh(false);
+	//	//画图测试
+	//	/**
+	//	* @author hlf
+	//	* @description 2022/3/22 把x轴改成1秒刷新2次
+	//	*/
+	//	m_X[m_count] = double(m_count)/2;
+	//	m_HightSpeedChartArray[m_count] = rcv_data;
+	//	m_pLineSerie->AddPoint(m_X[m_count], m_HightSpeedChartArray[m_count]);
+	//	m_chartctrl.EnableRefresh(true);
+	//	// 显示实时功率
+	//	avg = DC = 0;
+	//	CString cs = L"";
+	//	cs.Format(L"%.6f", rcv_data);//实时功率 
+	//	pPSDlg->m_cStaticPower.SetWindowText(cs);
+
+	//	// 显示平均值
+	//	m_HightSpeedChartArray_sum += rcv_data;
+	//	avg = m_HightSpeedChartArray_sum / (m_count+1);
+	//	cs.Format(L"%.6f", avg);
+	//	pPSDlg->m_cStaticPowerAvg.SetWindowText(cs);
+
+	//	//计算和显示方差
+	//	DCsum = 0;
+	//	for (int i = 0; i <= m_count; i++)
+	//	{
+	//		DCsum += pow(m_HightSpeedChartArray[i] - avg, 2);
+	//	}
+	//	DC = pow((DCsum / (m_count + 1)), 0.5);
+	//	cs.Format(L"%.6f", DC);
+	//	pPSDlg->m_cStaticPowerDC.SetWindowText(cs);
+	//	csMsg.Format(L"绘图中...\n");
+	//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+	//}
+	//else {
+	//	csMsg.Format(L"未接收到功率数值！\n");
+	//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
+	//}
+	//if (m_count == 14399) {
+	//	OnBnClickedButtonDataSave();
+	//	OnBnClickedButton1();
+	//}
 }
 /// 
 /// \brief 左移数组
@@ -582,24 +593,25 @@ void CPowerStaDemoDlg::AcceptData(int StaBit)
 	}
 	else commPort->drawing = false;
 
-	//if (StaBit==1) {
-	//	SuspendThread(hThread_KeepListen);
-	//	hThread_SendData = psSendData(m_pHandleComm, 8);
-	//}
-	//else if (StaBit == 0) {
-	//	SuspendThread(hThread_SendData);
-	//	ResumeThread(hThread_KeepListen);
-	//	//CloseHandle(hThread_SendData);
-	//	//ExitThread((DWORD)hThread_SendData);
-	//}
-	//else if (StaBit == -1) {
-	//	SuspendThread(hThread_SendData);
-	//	ResumeThread(hThread_KeepListen);
-	//}
-	//else if (StaBit == 2) {
-	//	ResumeThread(hThread_SendData);
-	//	SuspendThread(hThread_KeepListen);
-	//}
+	if (StaBit==1) {
+		hThread_KeepListen = psKeepListen(this);
+		//ResumeThread(hThread_KeepListen);
+		//hThread_SendData = psSendData(m_pHandleComm, 8);
+	}
+	else if (StaBit == 0) {
+		//SuspendThread(hThread_SendData);
+		SuspendThread(hThread_KeepListen);
+		//CloseHandle(hThread_SendData);
+		//ExitThread((DWORD)hThread_SendData);
+	}
+	else if (StaBit == -1) {
+		//SuspendThread(hThread_SendData);
+		SuspendThread(hThread_KeepListen);
+	}
+	else if (StaBit == 2) {
+		//ResumeThread(hThread_SendData);
+		ResumeThread(hThread_KeepListen);
+	}
 }
 
 void CPowerStaDemoDlg::OnBnClickedButton1()//接受数据并开始绘图
@@ -702,7 +714,7 @@ void CPowerStaDemoDlg::OnBnClickedButtonDataSave()
 	double tmp[3];
 	tmp[0] = DC;
 	tmp[1] = avg;
-	tmp[2] = rcv_data;
+	tmp[2] = currRevData;
 	string str_1;
 	if (inFile.fail() == 0)
 	{
@@ -972,4 +984,78 @@ void CPowerStaDemoDlg::OnBnClickedButtonOn3()//开启紫外开关
 			AcceptData(2);
 		}
 	}
+}
+
+LRESULT CPowerStaDemoDlg::OnThreadMessage(WPARAM wParam, LPARAM lParam)
+{
+	CString   csValue;
+	switch (wParam)
+	{
+	//case THREAD_MEASURE_STATUS:
+	//	switch (lParam)
+	//	{
+		//case THREAD_STATE_SUCCESS:
+		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowText(_T("测量完成"));
+		//	GetDlgItem(IDC_STATIC_RESULT)->SetWindowText(_T("测量完成"));
+		//	if ((m_dbElectrHighTemperature == m_dbElectrLowTemperature))
+		//	{
+		//		m_dbLightPowerMeasue = (m_dbElectrLowPower + m_dbElectrHighPower) / 2;
+		//	}
+		//	else
+		//	{
+		//		m_dbLightPowerMeasue = m_dbElectrLowPower +
+		//			(m_dbElectrHighPower - m_dbElectrLowPower)*(m_dbLightTemperature - m_dbElectrLowTemperature) / (m_dbElectrHighTemperature - m_dbElectrLowTemperature);
+		//	}
+		//	m_dbLightPowerMeasue = floor(m_dbLightPowerMeasue*1000.0 + 0.5) / 1000.0;
+		//	//结果按需输出给协作程序；
+		//	break;
+		//default:
+		//case THREAD_STATE_ERROR:
+		//case THREAD_STATE_TERMINATED:
+		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowText(_T("测量中止"));
+		//	GetDlgItem(IDC_STATIC_RESULT)->SetWindowText(_T("测量中止"));
+		//	break;
+		//}
+
+		//m_bInMesuring = false;
+		//GetDlgItem(IDC_STATIC_START)->SetWindowTextW(L"开始测量");
+		//GetDlgItem(IDC_STATIC_START)->RedrawWindow();
+		//break;
+
+	case THREAD_MEASURE_DATA:
+		m_count++;
+		m_chartctrl.EnableRefresh(false);
+		//画图测试
+		/**
+		* @author hlf
+		* @description 2022/3/22 把x轴改成1秒刷新2次
+		*/
+		m_X[m_count] = double(m_count) / 2;
+		m_HightSpeedChartArray[m_count] = currRevData;
+		m_pLineSerie->AddPoint(m_X[m_count], m_HightSpeedChartArray[m_count]);
+		m_chartctrl.EnableRefresh(true);
+		break;
+	}
+	UpdateData(FALSE);
+	return 0;
+}
+
+void CPowerStaDemoDlg::OnOK()
+{
+	// TODO: 在此添加专用代码和/或调用基类
+
+	//CDialogEx::OnOK();
+}
+
+
+BOOL CPowerStaDemoDlg::PreTranslateMessage(MSG* pMsg)
+{
+	// TODO: 在此添加专用代码和/或调用基类
+	if (pMsg->message == WM_KEYDOWN   &&   pMsg->wParam == VK_ESCAPE)
+	{
+		//将ESC键的消息替换为回车键的消息，这样，按ESC的时候  
+		 //也会和回车键一样去调用OnOK函数，而OnOK什么也不做，这样ESC也被屏蔽  
+		pMsg->wParam = VK_RETURN;
+	}
+	return CDialogEx::PreTranslateMessage(pMsg);
 }
