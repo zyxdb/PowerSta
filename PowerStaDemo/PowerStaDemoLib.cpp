@@ -78,16 +78,6 @@ void ReceiveDataThread(LPVOID lpParameter)
 		{
 			//pdlgMain->m_count++;
 			//pdlgMain->m_chartctrl.EnableRefresh(false);
-			////画图测试
-			///**
-			//* @author hlf
-			//* @description 2022/3/22 把x轴改成1秒刷新2次
-			//*/
-			//pdlgMain->m_X[pdlgMain->m_count] = double(pdlgMain->m_count) / 2;
-			//pdlgMain->m_HightSpeedChartArray[pdlgMain->m_count] = rcv_data;
-			//pdlgMain->m_pLineSerie->AddPoint(pdlgMain->m_X[pdlgMain->m_count], pdlgMain->m_HightSpeedChartArray[pdlgMain->m_count]);
-			//pdlgMain->m_chartctrl.EnableRefresh(true);
-
 			csMsg.Format(L"绘图中...\n");
 			pdlgMain->GetDlgItem(IDC_STATIC_STATUS)->SetWindowTextW(csMsg);
 
@@ -119,7 +109,7 @@ void ReceiveDataThread(LPVOID lpParameter)
 			//计算和显示比值
 			double scale = pdlgMain->DC / pdlgMain->avg;
 			cs.Format(L"%.6f", scale);
-			pdlgMain->m_cStaticPowerDC.SetWindowText(cs);
+			pdlgMain->m_cStaticPowerScale.SetWindowText(cs);
 		}
 		else {
 			csMsg.Format(L"未接收到功率数值！\n");

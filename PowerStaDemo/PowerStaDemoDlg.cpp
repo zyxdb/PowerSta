@@ -459,7 +459,6 @@ void CPowerStaDemoDlg::OnBnClickedButtonPowerSet()
 	UpdateData(TRUE);
 	CString csMsg;
 	char pcData[8];
-	float *pParam = (float *)(pcData + 2);
 	DWORD *pdwParam = (DWORD *)(pcData + 2);
 	unsigned short * pusChkSum = (unsigned short *)(pcData + 6);
 	unsigned short * pusData = (unsigned short *)pcData;
@@ -487,16 +486,16 @@ void CPowerStaDemoDlg::OnBnClickedButtonPowerSet()
 	}
 }
 
-void CPowerStaDemoDlg::OnTimer(UINT_PTR nIDEvent)
-{
-	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	if (2 == nIDEvent)
-	{
-		//++m_count;
-		drawMoving();
-	}
-	CDialogEx::OnTimer(nIDEvent);
-}
+//void CPowerStaDemoDlg::OnTimer(UINT_PTR nIDEvent)
+//{
+//	// TODO: 在此添加消息处理程序代码和/或调用默认值
+//	if (2 == nIDEvent)
+//	{
+//		//++m_count;
+//		//drawMoving();
+//	}
+//	CDialogEx::OnTimer(nIDEvent);
+//}
 
 
 void CPowerStaDemoDlg::drawMoving()
@@ -991,37 +990,6 @@ LRESULT CPowerStaDemoDlg::OnThreadMessage(WPARAM wParam, LPARAM lParam)
 	CString   csValue;
 	switch (wParam)
 	{
-	//case THREAD_MEASURE_STATUS:
-	//	switch (lParam)
-	//	{
-		//case THREAD_STATE_SUCCESS:
-		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowText(_T("测量完成"));
-		//	GetDlgItem(IDC_STATIC_RESULT)->SetWindowText(_T("测量完成"));
-		//	if ((m_dbElectrHighTemperature == m_dbElectrLowTemperature))
-		//	{
-		//		m_dbLightPowerMeasue = (m_dbElectrLowPower + m_dbElectrHighPower) / 2;
-		//	}
-		//	else
-		//	{
-		//		m_dbLightPowerMeasue = m_dbElectrLowPower +
-		//			(m_dbElectrHighPower - m_dbElectrLowPower)*(m_dbLightTemperature - m_dbElectrLowTemperature) / (m_dbElectrHighTemperature - m_dbElectrLowTemperature);
-		//	}
-		//	m_dbLightPowerMeasue = floor(m_dbLightPowerMeasue*1000.0 + 0.5) / 1000.0;
-		//	//结果按需输出给协作程序；
-		//	break;
-		//default:
-		//case THREAD_STATE_ERROR:
-		//case THREAD_STATE_TERMINATED:
-		//	GetDlgItem(IDC_STATIC_STATUS)->SetWindowText(_T("测量中止"));
-		//	GetDlgItem(IDC_STATIC_RESULT)->SetWindowText(_T("测量中止"));
-		//	break;
-		//}
-
-		//m_bInMesuring = false;
-		//GetDlgItem(IDC_STATIC_START)->SetWindowTextW(L"开始测量");
-		//GetDlgItem(IDC_STATIC_START)->RedrawWindow();
-		//break;
-
 	case THREAD_MEASURE_DATA:
 		m_count++;
 		m_chartctrl.EnableRefresh(false);
@@ -1036,7 +1004,7 @@ LRESULT CPowerStaDemoDlg::OnThreadMessage(WPARAM wParam, LPARAM lParam)
 		m_chartctrl.EnableRefresh(true);
 		break;
 	}
-	UpdateData(FALSE);
+	//UpdateData(FALSE);
 	return 0;
 }
 

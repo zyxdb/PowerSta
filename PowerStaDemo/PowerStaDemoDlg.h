@@ -76,7 +76,7 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 //	afx_msg void OnDeltaposSpinParam_1(NMHDR *pNMHDR, LRESULT *pResult);
 public:
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	//afx_msg void OnTimer(UINT_PTR nIDEvent);
 	void	PowerStaSettingEnable(BOOL bEnable=TRUE);
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnStaticClickedPowerStaConnect();
